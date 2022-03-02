@@ -10,7 +10,7 @@ from flask import render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, current_user, login_required
 from app.forms import LoginForm
 from app.models import UserProfile
-
+from werkzeug.security import check_password_hash
 
 ###
 # Routing for your application.
@@ -50,6 +50,20 @@ def login():
             return redirect(url_for("home"))  # they should be redirected to a secure-page route instead
     return render_template("login.html", form=form)
 
+def login():
+    form = LoginForm()
+    if request.method == "POST":
+        if  form.validate_on_submit():
+            username = form.username.data
+            password = form.password.data
+            user = UserProfile.query.filter_by(username=username).first()
+            if user is not None and check_password_hash(user.password, password):
+                login_user(user)
+                flash('You were successfully logged in.', 'success')
+                return redirect(url_for("secure_page")) 
+            else:
+                flash('Error. Incorrect login details', 'danger')
+    return render_template("login.html", form=form)
 
 # user_loader callback. This callback is used to reload the user object from
 # the user ID stored in the session
